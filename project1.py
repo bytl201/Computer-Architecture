@@ -16,39 +16,60 @@ def main():
         funct_mask = 0b00000000000000000000000000111111
         offset_mask = 0b00000000000000001111111111111111
 
+        # get value after mask and shift
         opcode = (instruction & opcode_mask) >> 26
         rs = (instruction & rs_mask) >> 21
         rt = (instruction & rt_mask) >> 16
 
+        # format hex address without '0x' as the prefix
+        formatted_hex_address = format(hex_address, "X")
+
+        # R-format
         if opcode == 0:
+            # get value after mask and shift
             rd = (instruction & rd_mask) >> 11
             funct = instruction & funct_mask
 
+            # add funct
             if funct == 0b100000:
-                print(f"{hex(hex_address)} add ${rd}, ${rs}, ${rt}")
+                print(f"{formatted_hex_address} add ${rd}, ${rs}, ${rt}")
+            # sub funct
             elif funct == 0b100010:
-                print(f"{hex(hex_address)} sub ${rd}, ${rs}, ${rt}")
+                print(f"{formatted_hex_address} sub ${rd}, ${rs}, ${rt}")
+            # and funct
             elif funct == 0b100100:
-                print(f"{hex(hex_address)} and ${rd}, ${rs}, ${rt}")
+                print(f"{formatted_hex_address} and ${rd}, ${rs}, ${rt}")
+            # or funct
             elif funct == 0b100101:
-                print(f"{hex(hex_address)} or ${rd}, ${rs}, ${rt}")
+                print(f"{formatted_hex_address} or ${rd}, ${rs}, ${rt}")
+            # slt funct
             elif funct == 0b101010:
-                print(f"{hex(hex_address)} slt ${rd}, ${rs}, ${rt}")
-
+                print(f"{formatted_hex_address} slt ${rd}, ${rs}, ${rt}")
+        # I-format
         else:
+            # get value after mask
             offset = instruction & offset_mask
+
+            # check if offset value is bigger than or equal to 2^15 and then subtract 2^16 to get signed value. 
 
             if offset >= 0x8000:
                 offset = offset - 0x10000
 
+            # format hex address without '0x' as the prefix
+            formatted_branch_address = format(hex_address+(4*offset)+(0x4), "X")
+
+            # lw opcode
             if opcode == 0b100011:
-                print(f"{hex(hex_address)} lw ${rt}, {offset} (${rs})")
+                print(f"{formatted_hex_address} lw ${rt}, {offset} (${rs})")
+            # sw opcode
             elif opcode == 0b101011:
-                print(f"{hex(hex_address)} sw ${rt}, {offset} (${rs})")
+                print(f"{formatted_hex_address} sw ${rt}, {offset} (${rs})")
+            # beq opcode
             elif opcode == 0b000100:
-                print(f"{hex(hex_address)} beq ${rs}, ${rt}, address ${hex(hex_address+(4*offset)+(0x4))}")
+                print(f"{formatted_hex_address} beq ${rs}, ${rt}, address {formatted_branch_address}")
+            # bne opcode
             elif opcode == 0b000101:
-                print(f"{hex(hex_address)} bne ${rs}, ${rt}, address ${hex(hex_address+(4*offset)+(0x4))}")
+                print(f"{formatted_hex_address} bne ${rs}, ${rt}, address {formatted_branch_address}")
 
         hex_address += 0x4
 
