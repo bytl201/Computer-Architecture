@@ -3,10 +3,9 @@ def main():
     instructions = [0x032BA020, 0x8CE90014, 0x12A90003, 0x022DA822, 0xADB30020, 0x02697824, 0xAE8FFFF4,
 0x018C6020, 0x02A4A825, 0x158FFFF7, 0x8ECDFFF0]
 
-    # instruction = 0x032BA020
-
     hex_address = 0x9A040
 
+    # iterate over each instruction
     for instruction in instructions:
         # mask for each field in instruction format
         opcode_mask = 0b11111100000000000000000000000000
@@ -55,7 +54,7 @@ def main():
             if offset >= 0x8000:
                 offset = offset - 0x10000
 
-            # format hex address without '0x' as the prefix
+            # format hex address without '0x' as the prefix, also calculates branch address by (4 * offset) for each instruction and then increase pc 
             formatted_branch_address = format(hex_address+(4*offset)+(0x4), "X")
 
             # lw opcode
@@ -71,6 +70,7 @@ def main():
             elif opcode == 0b000101:
                 print(f"{formatted_hex_address} bne ${rs}, ${rt}, address {formatted_branch_address}")
 
+        # increase pc 
         hex_address += 0x4
 
 
