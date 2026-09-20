@@ -50,7 +50,6 @@ def main():
             offset = instruction & offset_mask
 
             # check if offset value is bigger than or equal to 2^15 and then subtract 2^16 to get signed value. 
-
             if offset >= 0x8000:
                 offset = offset - 0x10000
 
