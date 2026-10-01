@@ -15,52 +15,74 @@ def main():
     block_offset_mask = 0xF
     index_mask = 0xF0
     tag_mask = 0x700
+
+    
+    with open("./project2/output.txt", "w") as file:   
+
+        while True:
+            option = input("(R)ead, (W)rite, or (D)isplay Cache?\n").lower()
+
+            match option:
+                case "r":
+                    address = int(input("What address would you like read?\n"), 16)
+
+                    file.write(f"Operation: Read, Address: {address:X}\n")
+                    file.flush()
+
+                    # distect the data
+                    block_offset = address & block_offset_mask
+                    index = (address & index_mask) >> 4 
+                    tag = (address & tag_mask) >> 8 
                     
-    while True:
-        option = input("(R)ead, (W)rite, or (D)isplay Cache?\n").lower()
+                    # get the CacheSlot object
+                    slot = cache[index]
 
-        match option:
-            case "r":
-                address = int(input("What address would you like read?\n"), 16)
+                    # call the read func
+                    slot.read(tag, index, block_offset, address, main_memory, file)
+                case "w":
+                    # input
+                    address = int(input("What address would you like to write to?\n"), 16)
+                    data = int(input("What data would you like to write at that address?\n"), 16)
 
-                # distect the data
-                block_offset = address & block_offset_mask
-                index = (address & index_mask) >> 4 
-                tag = (address & tag_mask) >> 8 
-                
-                # get the CacheSlot object
-                slot = cache[index]
+                    file.write(f"Operation: Write, Address: {address:X}, Data: {data:X}\n")
+                    file.flush()
 
-                # call the read func
-                slot.read(tag, index, block_offset, address, main_memory)
-            case "w":
-                # input
-                address = int(input("What address would you like to write to?\n"), 16)
-                data = int(input("What data would you like to write at that address?\n"), 16)
+                    # distect the data
+                    block_offset = address & block_offset_mask
+                    index = (address & index_mask) >> 4 
+                    tag = (address & tag_mask) >> 8 
 
-                # distect the data
-                block_offset = address & block_offset_mask
-                index = (address & index_mask) >> 4 
-                tag = (address & tag_mask) >> 8 
+                    # get the CacheSlot object
+                    slot = cache[index]
 
-                # get the CacheSlot object
-                slot = cache[index]
+                    # call the write func
+                    slot.write(data, tag, index, block_offset, address, main_memory, file)
+                case "d":
+                    file.write("Slot Valid Dirty Tag     Data\n")
+                    file.flush()
+                    print("Slot Valid Dirty Tag     Data")
 
-                # call the write func
-                slot.write(data, tag, index, block_offset, address, main_memory)
-            case "d":
-                print("Slot Valid Dirty Tag     Data")
+                    # iterate over each CacheSlot in arry
+                    for i in range(len(cache)):
+                        cache_slot = cache[i]
 
-                # iterate over each CacheSlot in arry
-                for i in range(len(cache)):
-                    cache_slot = cache[i]
-                    print(f"{i:X}    {cache_slot.valid_bit}     {cache_slot.dirty_bit}     {cache_slot.tag:X}       ", end="")
+                        file.write(f"{i:X}    {cache_slot.valid_bit}     {cache_slot.dirty_bit}     {cache_slot.tag:X}       ")
+                        file.flush()
+                        print(f"{i:X}    {cache_slot.valid_bit}     {cache_slot.dirty_bit}     {cache_slot.tag:X}       ", end="")
 
-                    # iterate over each element in CacheSlot's block
-                    for i in range(16):
-                        print(f"{cache_slot.block[i]:02X}   ", end="")
+                        # iterate over each element in CacheSlot's block
+                        for i in range(16):
+                            file.write(f"{cache_slot.block[i]:02X}   ")
+                            file.flush()
+                            print(f"{cache_slot.block[i]:02X}   ", end="")
+
+                        file.write("\n")
+                        file.flush()
+                        print("")
 
                     print()
+                    file.write("\n")
+                    file.flush()
 
 
 if __name__ == "__main__":

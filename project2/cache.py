@@ -26,10 +26,12 @@ class CacheSlot:
         for i in range(16):
             main_memory[start_address+i] = self.block[i]
 
-    def read(self, tag: int, index: int, block_offset: int, address: int, main_memory: list):
+    def read(self, tag: int, index: int, block_offset: int, address: int, main_memory: list, file):
         
         # cache hit
         if self.valid_bit == 1 and self.tag == tag:
+            file.write(f"At address {address:X}, there is the value: {self.block[block_offset]:X} (Cache Hit)\n\n")
+            file.flush()
             print(f"At address {address:X}, there is the value: {self.block[block_offset]:X} (Cache Hit)\n")
             
         # cache miss
@@ -40,9 +42,11 @@ class CacheSlot:
 
             self.read_main_memory_block(address, main_memory, tag)
 
+            file.write(f"At address {address:X}, there is the value: {self.block[block_offset]:X} (Cache Miss)\n\n")
+            file.flush()
             print(f"At address {address:X}, there is the value: {self.block[block_offset]:X} (Cache Miss)\n")
 
-    def write(self, data: int, tag: int, index: int, block_offset: int, address: int, main_memory: list):
+    def write(self, data: int, tag: int, index: int, block_offset: int, address: int, main_memory: list, file):
         # cache hit
         if self.valid_bit == 1 and self.tag == tag :
             # update the dirty_bit
@@ -51,6 +55,8 @@ class CacheSlot:
             # write the data to block
             self.block[block_offset] = data
 
+            file.write(f"Value {data:X} has been written to address {address:X}. (Cache Hit)\n\n")
+            file.flush()
             print(f"Value {data:X} has been written to address {address:X}. (Cache Hit)\n")
 
         # cache miss
@@ -66,4 +72,6 @@ class CacheSlot:
             self.block[block_offset] = data
             self.tag = tag
 
+            file.write(f"Value {data:X} has been written to address {address:X}. (Cache Miss)\n\n")
+            file.flush()
             print(f"Value {data:X} has been written to address {address:X}. (Cache Miss)\n")
