@@ -14,9 +14,9 @@ def id_stage(ifid_read: IfId, idex_write: IdEx, regs: list[int]):
     # read the instruction from ifid_read obj
     instruction = ifid_read.instruction
 
-    # first clock cycle will read None from ifid_read obj
-    if instruction is None:
-        idex_write.set(None, None, None, None, None, None)
+    # NOP
+    if instruction is None or instruction == 0x0:
+        idex_write.set(0,0,0,0,0,0)
         return
 
     # mask for each field in instruction format
@@ -31,42 +31,54 @@ def id_stage(ifid_read: IfId, idex_write: IdEx, regs: list[int]):
     opcode = (instruction & opcode_mask) >> 26
     rs = (instruction & rs_mask) >> 21
     rt = (instruction & rt_mask) >> 16
+    rd = (instruction & rd_mask) >> 11
+    funct = instruction & funct_mask
+    offset = instruction & offset_mask
+    
+    # check if offset value is bigger than or equal to 2^15 and then subtract 2^16 to get signed value. 
+    if offset >= 0x8000:
+        offset = offset - 0x10000
+
+    # get values from the register
+    rs_val = regs[rs]
+    rt_val = regs[rt]
 
     # R-format
-    if opcode == 0:
-        # get value after mask and shift
-        rd = (instruction & rd_mask) >> 11
-        funct = instruction & funct_mask
+    if opcode == 0 and (funct == 0x20 or funct == 0x22):
+        # set control signals
+        reg_dst = 1
+        alu_src = 0
+        mem_to_reg = 0
+        reg_write = 1
+        mem_read = 0
+        mem_write = 0
+        alu_op = 0b10
 
-        # add funct and sub funct
-        if funct == 0x20 or funct == 0x22:
-            rs = regs[rs]
-            rt = regs[rt]
-            idex_write.set(rs, rt, opcode, funct, rd, None)
-        # nop
-        elif funct == 0x0:
-            idex_write.set(None, None, None, None, None, None)
-    # I-format
-    else:
-        # get value after mask
-        offset = instruction & offset_mask
+        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, rd, offset, funct)
 
-        # check if offset value is bigger than or equal to 2^15 and then subtract 2^16 to get signed value. 
-        if offset >= 0x8000:
-            offset = offset - 0x10000
+    # lb opcode (mem -> reg)
+    elif opcode == 0x20:
+        reg_dst = 0
+        alu_src = 1
+        mem_to_reg = 1
+        reg_write = 1
+        mem_read = 1
+        mem_write = 0
+        alu_op = 0b00
 
-        # lb opcode (mem -> reg)
-        if opcode == 0x20:
-            # get base address
-            rs = regs[rs]
-            idex_write.set(rs, rt, opcode, None, None, offset)
-        # sb opcode (reg -> mem)
-        elif opcode == 0x28:
-            # get base address for calculating memory address
-            rs = regs[rs]
-            # get value to store in memory
-            rt = regs[rt]
-            idex_write.set(rs, rt, opcode, None, None, offset)
+        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt, rd, offset, funct)
+    
+    # sb opcode (reg -> mem)
+    elif opcode == 0x28:
+        reg_dst = None
+        alu_src = 1
+        mem_to_reg = None
+        reg_write = 0
+        mem_read = 0
+        mem_write = 1
+        alu_op = 0b00
+
+        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, rd, offset, funct)
         
 def ex_stage(idex_read: IdEx, exmem_write: ExMem):
 

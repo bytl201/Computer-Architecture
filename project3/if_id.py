@@ -7,8 +7,6 @@ class IfId():
         self.instruction = None
 
     def set(self, instruction: int | None):
-        self.reset()
-
         self.instruction = instruction
 
     def get(self):

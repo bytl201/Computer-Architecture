@@ -36,45 +36,28 @@ class IdEx:
         self.mem_write = None
         self.alu_op = None
 
-    def set(self, rs, rt, opcode, funct: int | None, rd: int | None, offset: int | None):
+    def set(self, reg_dst: int | None, alu_src: int, mem_to_reg: int | None, reg_write: int, mem_read: int, mem_write: int, alu_op: int,
+            opcode: int, rs: int, rt: int, rd: int, offset: int, funct: int):
         # reset the values
         self.reset()
 
         # instructions
+        self.opcode = opcode
         self.rs = rs
         self.rt = rt
         self.rd = rd
-        self.offset = offset
-        self.opcode = opcode
         self.funct = funct
+        self.offset = offset
 
-        # add and subtract
-        if opcode == 0 and (funct == 0x20 or funct == 0x22):
-            self.reg_dst = 1
-            self.alu_src = 0
-            self.mem_to_reg = 0
-            self.reg_write = 1
-            self.mem_read = 0
-            self.mem_write = 0
-            self.alu_op = 0b10
-
-        # lb
-        elif opcode == 0x20:
-            self.reg_dst = 0
-            self.alu_src = 1
-            self.mem_to_reg = 1
-            self.reg_write = 1
-            self.mem_read = 1
-            self.mem_write = 0
-            self.alu_op = 0b00
-
-        # sb
-        elif opcode  == 0x28:
-            self.alu_src = 1
-            self.reg_write = 0
-            self.mem_read = 0
-            self.mem_write = 1
-            self.alu_op = 0b00
+        # control signals
+        self.reg_dst = reg_dst
+        self.alu_src = alu_src
+        self.mem_to_reg = mem_to_reg
+        self.reg_write = reg_write
+        self.mem_read = mem_read
+        self.mem_write = mem_write
+        self.alu_op = alu_op
 
     def get(self):
-        return [self.rs, self.rt, self.opcode, self.funct, self.rd, self.offset]
+        return [self.reg_dst, self.alu_src, self.mem_to_reg, self.reg_write, self.mem_read, self.mem_write, self.alu_op ,
+            self.opcode, self.rs, self.rt, self.rd, self.offset, self.funct ]
