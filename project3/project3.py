@@ -191,9 +191,11 @@ def copy_write_to_read(
         read.set(*write.get())
 
 def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
-                             idex_write: IdEx, idex_read: IdEx,
-                             exmem_write: ExMem, exmem_read: ExMem,
-                             memwb_write: MemWb, memwb_read: MemWb, regs: list[int], file):
+                         idex_write: IdEx, idex_read: IdEx,
+                         exmem_write: ExMem, exmem_read: ExMem,
+                         memwb_write: MemWb, memwb_read: MemWb,
+                         regs: list[int], file):
+
     file.write(f"Clock Cycle {index}\n\n")
 
     # TODO: IF/ID
@@ -206,6 +208,7 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
     file.write(f"**IF/ID Read (read by the ID stage)**\n")
     instruction = f"{ifid_read.instruction:08X}" if ifid_read.instruction else f"{0:08X}"
     file.write(f"Instruction = 0x{instruction}\n\n")
+
 
     # TODO: ID/EX
     # write
@@ -228,10 +231,31 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
 
     if (reg_dst is None and alu_src == 0 and mem_to_reg is None) or (reg_dst is None and alu_src is None and mem_to_reg is None):
         file.write(f"Control = {0:08X}\n")
+
     else:
-        file.write(f"Control: RegDst = {reg_dst}, ALUSrc = {alu_src}, ALUOp = {alu_op}, MemRead = {mem_read}, MemWrite = {mem_write}\n" + 
-                   f"         MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n"+
-                   f"Register 1 Value = {rs}, Register 2 Value = {rt}, Offset = {offset}, Register 20-16 = {reg_20_16}, Register 15-11 = {reg_15_11}, Function = {funct}\n")
+        # R-format
+        if reg_dst == 1 and alu_src == 0 and alu_op == 0b10:
+            offset = "X"
+
+        # lb
+        elif reg_dst == 0 and alu_src == 1 and mem_read == 1:
+            funct = "X"
+
+        # sb
+        elif reg_dst is None and alu_src == 1 and mem_write == 1:
+            funct = "X"
+
+        # don't-care control signals
+        if reg_dst is None:
+            reg_dst = "X"
+
+        if mem_to_reg is None:
+            mem_to_reg = "X"
+
+        file.write(
+            f"Control: RegDst = {reg_dst}, ALUSrc = {alu_src}, ALUOp = {alu_op}, MemRead = {mem_read}, MemWrite = {mem_write}, MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n"
+            f"         Register 1 Value = {rs}, Register 2 Value = {rt}, Offset = {offset}, Register 20-16 = {reg_20_16}, Register 15-11 = {reg_15_11}, Function = {funct}\n"
+        )
 
     # read
     file.write(f"**ID/EX Read (read by the EX stage)**\n")
@@ -253,10 +277,31 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
 
     if (reg_dst is None and alu_src == 0 and mem_to_reg is None) or (reg_dst is None and alu_src is None and mem_to_reg is None):
         file.write(f"Control = {0:08X}\n\n")
+
     else:
-        file.write(f"Control: RegDst = {reg_dst}, ALUSrc = {alu_src}, ALUOp = {alu_op}, MemRead = {mem_read}, MemWrite = {mem_write}\n" + 
-                   f"         MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n"+
-                   f"Register 1 Value = {rs}, Register 2 Value = {rt}, Offset = {offset}, Register 20-16 = {reg_20_16}, Register 15-11 = {reg_15_11}, Function = {funct}\n\n")
+        # R-format
+        if reg_dst == 1 and alu_src == 0 and alu_op == 0b10:
+            offset = "X"
+
+        # lb
+        elif reg_dst == 0 and alu_src == 1 and mem_read == 1:
+            funct = "X"
+
+        # sb
+        elif reg_dst is None and alu_src == 1 and mem_write == 1:
+            funct = "X"
+
+        # don't-care control signals
+        if reg_dst is None:
+            reg_dst = "X"
+
+        if mem_to_reg is None:
+            mem_to_reg = "X"
+
+        file.write(
+            f"Control: RegDst = {reg_dst}, ALUSrc = {alu_src}, ALUOp = {alu_op}, MemRead = {mem_read}, MemWrite = {mem_write}\n"
+            f"         MemToReg = {mem_to_reg}, RegWrite = {reg_write}, Register 1 Value = {rs}, Register 2 Value = {rt}, Offset = {offset}, Register 20-16 = {reg_20_16}, Register 15-11 = {reg_15_11}, Function = {funct}\n\n"
+        )
 
     # TODO: EX/MEM
     # write
@@ -271,15 +316,28 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
     mem_to_reg = exmem_write.mem_to_reg
     reg_write = exmem_write.reg_write
 
-    if (alu_result is None and dest is None) or (mem_read == 0 and mem_write == 0 and alu_result == 0 and dest == None):
+    if (alu_result is None and dest is None) or (mem_read == 0 and mem_write == 0 and alu_result == 0 and dest is None):
+
         file.write(f"Control = {0:08X}\n")
+
     else:
-        file.write(f"Control: MemRead = {mem_read}, MemWrite = {mem_write}, MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n" +
-                   f"         ALUResult = {alu_result}, SB Value = {sb_value}, Write Register Number = {dest}\n")
+        # sb
+        if mem_write == 1:
+            dest = "X"
+            mem_to_reg = "X"
+
+        # add, sub, or lb
+        else:
+            sb_value = "X"
+
+        file.write(
+            f"Control: MemRead = {mem_read}, MemWrite = {mem_write}, MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n"
+            f"         ALUResult = {alu_result}, SB Value = {sb_value}, Write Register Number = {dest}\n"
+        )
 
     # read
     file.write(f"**EX/MEM Read (read by the MEM stage)**\n")
-    
+
     alu_result = exmem_read.alu_result
     dest = exmem_read.dest
     sb_value = exmem_read.sb_value
@@ -289,11 +347,23 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
     mem_to_reg = exmem_read.mem_to_reg
     reg_write = exmem_read.reg_write
 
-    if (alu_result is None and dest is None) or (mem_read == 0 and mem_write == 0 and alu_result == 0 and dest == None):
+    if (alu_result is None and dest is None) or (mem_read == 0 and mem_write == 0 and alu_result == 0 and dest is None):
         file.write(f"Control = {0:08X}\n\n")
+
     else:
-        file.write(f"Control: MemRead = {mem_read}, MemWrite = {mem_write}, MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n" +
-                   f"         ALUResult = {alu_result}, SB Value = {sb_value}, Write Register Number = {dest}\n\n")
+        # sb
+        if mem_write == 1:
+            dest = "X"
+            mem_to_reg = "X"
+
+        # add, sub, or lb
+        else:
+            sb_value = "X"
+
+        file.write(
+            f"Control: MemRead = {mem_read}, MemWrite = {mem_write}, MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n"
+            f"         ALUResult = {alu_result}, SB Value = {sb_value}, Write Register Number = {dest}\n\n"
+        )
 
     # TODO: MEM/WB
     # write
@@ -305,30 +375,57 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
     mem_to_reg = memwb_write.mem_to_reg
     reg_write = memwb_write.reg_write
 
-    if (mem_to_reg == 0 and reg_write == 1) or mem_to_reg == 1 and reg_write == 1:
-        file.write(f"Control: MemToReg = {mem_to_reg}, RegWrite = {reg_write}, LB Value = {lb_data}, ALUResult = {alu_result}, Write Register Number = {dest}\n")
+    if (mem_to_reg == 0 and reg_write == 1) or (mem_to_reg == 1 and reg_write == 1):
+
+        # R-format
+        if mem_to_reg == 0:
+            lb_data = "X"
+
+        # lb
+        elif mem_to_reg == 1:
+            alu_result = "X"
+
+        file.write(
+            f"Control: MemToReg = {mem_to_reg}, RegWrite = {reg_write}, LB Value = {lb_data}, ALUResult = {alu_result}, Write Register Number = {dest}\n"
+        )
+
     else:
         file.write(f"Control = {0:08X}\n")
 
     # read
     file.write(f"**MEM/WB Read (read by the WB stage)**\n")
-    
+
     alu_result = memwb_read.alu_result
     lb_data = memwb_read.lb_data
     dest = memwb_read.dest
     mem_to_reg = memwb_read.mem_to_reg
     reg_write = memwb_read.reg_write
 
-    if (mem_to_reg == 0 and reg_write == 1) or mem_to_reg == 1 and reg_write == 1:
-        file.write(f"Control: MemToReg = {mem_to_reg}, RegWrite = {reg_write}, LB Value = {lb_data}, ALUResult = {alu_result}, Write Register Number = {dest}\n\n")
+    if (mem_to_reg == 0 and reg_write == 1) or (mem_to_reg == 1 and reg_write == 1):
+
+        # R-format
+        if mem_to_reg == 0:
+            lb_data = "X"
+
+        # lb
+        elif mem_to_reg == 1:
+            alu_result = "X"
+
+        file.write(
+            f"Control: MemToReg = {mem_to_reg}, RegWrite = {reg_write}, LB Value = {lb_data}, ALUResult = {alu_result}, Write Register Number = {dest}\n\n"
+        )
+
     else:
         file.write(f"Control = {0:08X}\n\n")
+
 
     # register
     file.write(f"**Register**\n")
     file.write("[")
+
     for i in regs:
         file.write(f"{i:08X} ")
+
     file.write("]\n\n")
 
 def main():
