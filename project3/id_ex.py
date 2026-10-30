@@ -8,25 +8,9 @@ class IdEx:
         self.offset = None
         self.opcode = None
         self.funct = None
+        self.reg_20_16 = None
+        self.reg_15_11 = None
 
-        # default control signals
-        self.reg_dst = None
-        self.alu_src = None
-        self.mem_to_reg = None
-        self.reg_write = None
-        self.mem_read = None
-        self.mem_write = None
-        self.alu_op = None
-
-    def reset(self):
-        # instruction
-        self.rs = None
-        self.rt = None
-        self.rd = None
-        self.offset = None
-        self.opcode = None
-        self.funct = None
-    
         # default control signals
         self.reg_dst = None
         self.alu_src = None
@@ -37,9 +21,7 @@ class IdEx:
         self.alu_op = None
 
     def set(self, reg_dst: int | None, alu_src: int, mem_to_reg: int | None, reg_write: int, mem_read: int, mem_write: int, alu_op: int,
-            opcode: int, rs: int, rt: int, rd: int, offset: int, funct: int):
-        # reset the values
-        self.reset()
+            opcode: int, rs: int, rt: int, rd: int, reg_20_16: int, reg_15_11: int, offset: int, funct: int):
 
         # instructions
         self.opcode = opcode
@@ -48,6 +30,8 @@ class IdEx:
         self.rd = rd
         self.funct = funct
         self.offset = offset
+        self.reg_20_16 = reg_20_16
+        self.reg_15_11 = reg_15_11
 
         # control signals
         self.reg_dst = reg_dst
@@ -60,4 +44,4 @@ class IdEx:
 
     def get(self):
         return [self.reg_dst, self.alu_src, self.mem_to_reg, self.reg_write, self.mem_read, self.mem_write, self.alu_op ,
-            self.opcode, self.rs, self.rt, self.rd, self.offset, self.funct ]
+            self.opcode, self.rs, self.rt, self.rd, self.reg_20_16, self.reg_15_11, self.offset, self.funct]
