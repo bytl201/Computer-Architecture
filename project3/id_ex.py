@@ -4,7 +4,6 @@ class IdEx:
         # instruction
         self.rs = None
         self.rt = None
-        self.rd = None
         self.offset = None
         self.opcode = None
         self.funct = None
@@ -21,13 +20,12 @@ class IdEx:
         self.alu_op = None
 
     def set(self, reg_dst: int | None, alu_src: int, mem_to_reg: int | None, reg_write: int, mem_read: int, mem_write: int, alu_op: int,
-            opcode: int, rs: int, rt: int, rd: int, reg_20_16: int, reg_15_11: int, offset: int, funct: int):
+            opcode: int, rs: int, rt: int, reg_20_16: int, reg_15_11: int, offset: int, funct: int):
 
         # instructions
         self.opcode = opcode
         self.rs = rs
         self.rt = rt
-        self.rd = rd
         self.funct = funct
         self.offset = offset
         self.reg_20_16 = reg_20_16
@@ -44,4 +42,4 @@ class IdEx:
 
     def get(self):
         return [self.reg_dst, self.alu_src, self.mem_to_reg, self.reg_write, self.mem_read, self.mem_write, self.alu_op ,
-            self.opcode, self.rs, self.rt, self.rd, self.reg_20_16, self.reg_15_11, self.offset, self.funct]
+            self.opcode, self.rs, self.rt, self.reg_20_16, self.reg_15_11, self.offset, self.funct]

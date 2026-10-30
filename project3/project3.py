@@ -3,9 +3,6 @@ from id_ex import IdEx
 from if_id import IfId
 from mem_wb import MemWb
 
-RESET = "\033[0m"
-RED_BG = "\033[41m"
-
 def if_stage(instruction: int, ifid_write: IfId):
     # write the new instruction to the if/id reg
     ifid_write.set(instruction)
@@ -16,7 +13,7 @@ def id_stage(ifid_read: IfId, idex_write: IdEx, regs: list[int]):
 
     # NOP
     if instruction is None or instruction == 0x0:
-        idex_write.set(None, 0, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        idex_write.set(None, 0, None, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         return
 
     # mask for each field in instruction format
@@ -56,7 +53,7 @@ def id_stage(ifid_read: IfId, idex_write: IdEx, regs: list[int]):
         mem_write = 0
         alu_op = 0b10
 
-        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, rd, reg_20_16, reg_15_11, offset, funct)
+        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, reg_20_16, reg_15_11, offset, funct)
 
     # lb opcode (mem -> reg)
     elif opcode == 0x20:
@@ -68,7 +65,7 @@ def id_stage(ifid_read: IfId, idex_write: IdEx, regs: list[int]):
         mem_write = 0
         alu_op = 0b00
 
-        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, rd, reg_20_16, reg_15_11, offset, funct)
+        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, reg_20_16, reg_15_11, offset, funct)
     
     # sb opcode (reg -> mem)
     elif opcode == 0x28:
@@ -80,19 +77,18 @@ def id_stage(ifid_read: IfId, idex_write: IdEx, regs: list[int]):
         mem_write = 1
         alu_op = 0b00
 
-        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, rd, reg_20_16, reg_15_11, offset, funct)
+        idex_write.set(reg_dst, alu_src, mem_to_reg, reg_write, mem_read, mem_write, alu_op, opcode, rs_val, rt_val, reg_20_16, reg_15_11, offset, funct)
         
 def ex_stage(idex_read: IdEx, exmem_write: ExMem):
     # instructions
     opcode = idex_read.opcode
     rs = idex_read.rs
     rt = idex_read.rt
-    rd = idex_read.rd
     funct = idex_read.funct
     offset = idex_read.offset
     reg_20_16 = idex_read.reg_20_16
     reg_15_11 = idex_read.reg_15_11
-    
+
     # set control signals
     reg_dst = idex_read.reg_dst
     alu_src = idex_read.alu_src
@@ -202,45 +198,63 @@ def print_out_everything(index: int, ifid_write: IfId, ifid_read: IfId,
 
     # TODO: IF/ID
     # write
-    file.write(f"IF/ID Write (written to by the IF stage)\n")
-    instruction = f"0x{ifid_write.instruction:08X}" if ifid_write.instruction else f"0x{0:08X}"
+    file.write(f"**IF/ID Write (written to by the IF stage)**\n")
+    instruction = f"{ifid_write.instruction:08X}" if ifid_write.instruction else f"{0:08X}"
     file.write(f"Instruction = 0x{instruction}\n")
 
     # read
-    file.write(f"IF/ID Read (read by the ID stage)\n")
-    instruction = f"0x{ifid_read.instruction:08X}" if ifid_read.instruction else f"0x{0:08X}"
+    file.write(f"**IF/ID Read (read by the ID stage)**\n")
+    instruction = f"{ifid_read.instruction:08X}" if ifid_read.instruction else f"{0:08X}"
     file.write(f"Instruction = 0x{instruction}\n\n")
 
     # TODO: ID/EX
     # write
-    file.write(f"ID/EX Write (written to by the ID stage)\n")
+    file.write(f"**ID/EX Write (written to by the ID stage)**\n")
 
     rs = f"{idex_write.rs}" if idex_write else None
     rt = idex_write.rt
-    rd = idex_write.rd
     offset = idex_write.offset
-    opcode = idex_write.opcode
-    funct = idex_write.funct
+    reg_20_16 = idex_write.reg_20_16
+    reg_15_11 = idex_write.reg_15_11
 
-    reg_dst = 
-    alu_src = None
-    mem_to_reg = None
-    reg_write = None
-    mem_read = None
-    mem_write = None
-    alu_op = None
+    reg_dst = idex_write.reg_dst
+    alu_src = idex_write.alu_src
+    mem_to_reg = idex_write.mem_to_reg
+    reg_write = idex_write.reg_write
+    mem_read = idex_write.mem_read
+    mem_write = idex_write.mem_write
+    alu_op = idex_write.alu_op
 
+    if not rs:
+        file.write(f"Control = {0:08X}")
+    else:
+        file.write(f"Control: RegDst = {reg_dst}, ALUSrc = {alu_src}, ALUOp = {alu_op}, MemRead = {mem_read}, MemWrite = {mem_write}\n" + 
+                   f"         MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n"+
+                   f"Register 1 Value = {rs}, Register 2 Value = {rt}, Offset = {offset}, Register 20-16 = {reg_20_16}, Register 15-11 = {reg_15_11}\n")
 
-    
+    # read
+    file.write(f"**ID/EX Read (read by the EX stage)**\n")
 
+    rs = f"{idex_read.rs}" if idex_read else None
+    rt = idex_read.rt
+    offset = idex_read.offset
+    reg_20_16 = idex_read.reg_20_16
+    reg_15_11 = idex_read.reg_15_11
 
-    # ID/EX
-    # write
-    print(f"{RED_BG}ID/EX Write (written to by the ID stage)")
-    idex_write_output = (f"" if idex_write.opcode and idex_write.rs else f"Control = 0x"):08X
-    print(f"(Control: RegDst = {idex_write.reg_dst} if )")
+    reg_dst = idex_read.reg_dst
+    alu_src = idex_read.alu_src
+    mem_to_reg = idex_read.mem_to_reg
+    reg_write = idex_read.reg_write
+    mem_read = idex_read.mem_read
+    mem_write = idex_read.mem_write
+    alu_op = idex_read.alu_op
 
-    print()
+    if not rs:
+        file.write(f"Control = {0:08X}")
+    else:
+        file.write(f"Control: RegDst = {reg_dst}, ALUSrc = {alu_src}, ALUOp = {alu_op}, MemRead = {mem_read}, MemWrite = {mem_write}\n" + 
+                   f"         MemToReg = {mem_to_reg}, RegWrite = {reg_write}\n")
+
 
 def main():
 
